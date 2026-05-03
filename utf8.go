@@ -1,7 +1,6 @@
 package utf8
 
 import (
-	"fmt"
 	"slices"
 )
 
@@ -13,14 +12,30 @@ U+0800   – U+FFFF      1110xxxx    10xxxxxx    10xxxxxx
 U+10000  – U+10FFFF    11110xxx    10xxxxxx    10xxxxxx    10xxxxxx
 */
 
+func DecodeBytes(b []byte) []rune {
+	start, end := 0, 1
+	runes := []rune{}
+	for start < len(b) {
+		r, x := DecodeRune(b[start:end])
+		if r == -1 {
+			end += x - 1
+			continue
+		}
+		runes = append(runes, r)
+		start = end
+		end = start + 1
+	}
+	return runes
+}
+
 func DecodeRune(b []byte) (rune, int) {
 	magic := b[0]
 	switch {
 	case magic&0x80 == 0:
 		return decodeOne(b)
-	case magic&0xC0 == 0xC0:
+	case magic&0xE0 == 0xC0:
 		return decodeTwo(b)
-	case magic&0xE0 == 0xE0:
+	case magic&0xF0 == 0xE0:
 		return decodeThree(b)
 	default:
 		return decodeFour(b)
@@ -32,38 +47,75 @@ func decodeOne(b []byte) (rune, int) {
 }
 
 func decodeTwo(b []byte) (rune, int) {
-	fmt.Println("WOWOW", b[0], b[0]&0b00011111)
-	fmt.Printf("%b\n", b[0])
+	if len(b) != 2 {
+		return -1, 2
+	}
 
 	var r rune
-	r = rune(b[0]) & 0b00011111
-	fmt.Printf("%b\n", r)
+	r = rune(b[0]) & 0x1F
 	r = r << 6
-	fmt.Printf("%b\n", r)
-	r = r | (rune(b[1] & 0b00111111))
-	fmt.Printf("%b\n", r)
-
+	r = r | (rune(b[1] & 0x3F))
 	return r, 2
-
 }
 
 func decodeThree(b []byte) (rune, int) {
-	return 0, 0
+	if len(b) != 3 {
+		return -1, 3
+	}
+
+	var r rune
+	r = rune(b[0]) & 0xF
+	r = r << 6
+	r = r | (rune(b[1] & 0x3F))
+	r = r << 6
+	r = r | (rune(b[2] & 0x3F))
+	return r, 3
 }
 
 func decodeFour(b []byte) (rune, int) {
-	return 0, 0
+	if len(b) != 4 {
+		return -1, 4
+	}
+
+	var r rune
+	r = rune(b[0]) & 0x7
+	r = r << 6
+	r = r | (rune(b[1] & 0x3F))
+	r = r << 6
+	r = r | (rune(b[2] & 0x3F))
+	r = r << 6
+	r = r | (rune(b[3] & 0x3F))
+	return r, 4
 }
 
 func EncodeString(s string) []byte {
-	var finalBytes []byte
-	// TODO: switch to using raw for loops
-	for _, r := range s {
-		bytes, _ := EncodeRune(r)
-		finalBytes = append(finalBytes, bytes...)
+	raw := []byte(s)
+	result := []byte{}
+	start, end := 0, 1
+	for start < len(raw) {
+		r, x := DecodeRune(raw[start:end])
+		if r == -1 {
+			end += x - 1
+			continue
+		}
+		encoded, _ := EncodeRune(r)
+		result = append(result, encoded...)
+		start = end
+		end = start + 1
 	}
-	return finalBytes
+	return result
 }
+
+// TODO: keep this implementation so we could improve the perf for our encoder
+// and then benchmark it with the for loop
+// func EncodeString(s string) []byte {
+// 	var finalBytes []byte
+// 	for _, r := range s {
+// 		bytes, _ := EncodeRune(r)
+// 		finalBytes = append(finalBytes, bytes...)
+// 	}
+// 	return finalBytes
+// }
 
 func EncodeRune(r rune) ([]byte, int) {
 	switch {

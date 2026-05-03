@@ -12,7 +12,7 @@ Article available at [https://x.com/mxdvf](x.com/mxdvf) (coming soon!), explaine
 
 Unicode reserves U+E000-U+F8FF for private use → valid codepoints with no assigned meaning. The demo encodes U+E001 to bytes, ships it over the wire and decodes it through a custom glyph registry that maps it to a private symbol.
 
-Open `demo/index.html` to see it live.
+Open [the webpage](https://mxdvf.github.io/utf8/) to see it live.
 
 ## Benchmarks
 

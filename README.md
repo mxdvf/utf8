@@ -6,7 +6,7 @@ No standard library encoding functions used: every bit operation is explicit. Bu
 
 ## Usage and internals
 
-Article available at (coming soon!), explained step-by-step using first principles.
+Article available at [https://x.com/mxdvf](x.com/mxdvf) (coming soon!), explained step-by-step using first principles.
 
 ## Private use area demo
 

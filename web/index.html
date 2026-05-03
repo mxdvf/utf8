@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mxdvf — UTF-8 Private Use Demo</title>
+    <style>
+      @font-face {
+        font-family: "mxdvf";
+        src: url("mxdvf-Regular.woff") format("woff");
+        font-weight: normal;
+        font-style: normal;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0a0a0a;
+        --surface: #111111;
+        --border: #1e1e1e;
+        --text: #e8e8e8;
+        --muted: #555;
+        --accent: #c8ff00;
+        --accent-dim: rgba(200, 255, 0, 0.08);
+        --mono: "Courier New", monospace;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 60px;
+        animation: fadeIn 0.6s ease both;
+      }
+
+      .header h1 {
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+
+      .header .title {
+        font-size: clamp(22px, 4vw, 32px);
+        color: var(--text);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+
+      .header .title span {
+        color: var(--accent);
+      }
+
+      .demo {
+        width: 100%;
+        max-width: 680px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        animation: fadeIn 0.6s 0.1s ease both;
+      }
+
+      .step {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 24px 28px;
+        transition: border-color 0.2s;
+      }
+
+      .step:first-child {
+        border-radius: 4px 4px 0 0;
+      }
+      .step:last-child {
+        border-radius: 0 0 4px 4px;
+      }
+      .step.active {
+        border-color: var(--accent);
+      }
+
+      .step-label {
+        font-size: 12px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+      }
+
+      input[type="text"] {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 14px;
+        padding: 10px 14px;
+        flex: 1;
+        outline: none;
+        transition: border-color 0.2s;
+        border-radius: 2px;
+      }
+
+      input[type="text"]:focus {
+        border-color: var(--accent);
+      }
+
+      button {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        border-radius: 2px;
+        white-space: nowrap;
+      }
+
+      button:hover {
+        opacity: 0.85;
+      }
+      button:active {
+        opacity: 0.7;
+      }
+
+      .bytes-display {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        min-height: 36px;
+        align-items: center;
+      }
+
+      .byte {
+        background: var(--accent-dim);
+        border: 1px solid rgba(200, 255, 0, 0.2);
+        color: var(--accent);
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 2px;
+        font-family: var(--mono);
+        animation: popIn 0.2s ease both;
+      }
+
+      .codepoint-display {
+        font-size: 13px;
+        color: var(--text);
+      }
+      .codepoint-display .cp {
+        color: var(--accent);
+        font-size: 15px;
+      }
+
+      .glyph-display {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .glyph {
+        font-family: "mxdvf", monospace;
+        font-size: 72px;
+        color: var(--accent);
+        line-height: 1;
+        animation: glyphReveal 0.4s ease both;
+      }
+
+      .glyph-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-left: 40px;
+      }
+      .glyph-meta .name {
+        font-size: 13px;
+        color: var(--text);
+      }
+      .glyph-meta .desc {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .wire {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        justify-content: center;
+      }
+
+      .wire-line {
+        flex: 1;
+        height: 1px;
+        background: repeating-linear-gradient(
+          90deg,
+          var(--border) 0,
+          var(--border) 4px,
+          transparent 4px,
+          transparent 8px
+        );
+      }
+
+      .empty {
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+      }
+
+      .explanation {
+        margin-top: 40px;
+        max-width: 680px;
+        width: 100%;
+        border-left: 2px solid var(--border);
+        padding-left: 20px;
+        animation: fadeIn 0.6s 0.2s ease both;
+      }
+
+      .explanation p {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.8;
+        margin-bottom: 8px;
+      }
+      .explanation p span {
+        color: var(--accent);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes popIn {
+        from {
+          opacity: 0;
+          transform: scale(0.85);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @keyframes glyphReveal {
+        from {
+          opacity: 0;
+          transform: scale(0.6) rotate(-10deg);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1 style="font-size: medium">utf-8 / private use area</h1>
+      <div class="title">encoding <span>U+E001</span> over the wire</div>
+    </div>
+
+    <div class="demo">
+      <div class="step" id="step-encode">
+        <div class="step-label">01 — sender / encode</div>
+        <div class="input-row">
+          <input type="text" disabled value="0xE001" readonly />
+          <button onclick="encode()">encode &rarr;</button>
+        </div>
+      </div>
+
+      <div class="wire">
+        <div class="wire-line"></div>
+        <span>wire</span>
+        <div class="wire-line"></div>
+      </div>
+
+      <div class="step" id="step-wire">
+        <div class="step-label">02 — bytes on the wire</div>
+        <div class="bytes-display" id="bytes-display">
+          <span class="empty">— waiting for encode —</span>
+        </div>
+      </div>
+
+      <div class="wire">
+        <div class="wire-line"></div>
+        <span>wire</span>
+        <div class="wire-line"></div>
+      </div>
+
+      <div class="step" id="step-decode">
+        <div class="step-label">03 — receiver / decode bytes &rarr; codepoint</div>
+        <div class="codepoint-display" id="cp-display">
+          <span class="empty">— waiting for bytes —</span>
+        </div>
+      </div>
+
+      <div class="step" id="step-registry">
+        <div class="step-label">04 — registry lookup &rarr; render glyph</div>
+        <div class="glyph-display" id="glyph-display">
+          <span class="empty">— waiting for codepoint —</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="explanation">
+      <p>
+        <span>U+E001</span> lives in Unicode's Private Use Area (U+E000–U+F8FF). UTF-8 encodes it
+        faithfully as 3 bytes. The encoding layer is standard.
+      </p>
+      <p>
+        Anyone receiving <span>[238, 128, 129]</span> without this registry sees nothing. Only this
+        decoder knows what those bytes mean.
+      </p>
+      <p>Transport is universal. Meaning is private.</p>
+    </div>
+
+    <script>
+      const REGISTRY = {
+        0xe001: { name: "mxdvf-glyph", description: "private glyph — U+E001" },
+      };
+
+      function encodeRune(cp) {
+        if (cp <= 0x7f) return [cp];
+        if (cp <= 0x7ff) return [0xc0 | (cp >> 6), 0x80 | (cp & 0x3f)];
+        if (cp <= 0xffff) return [0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f)];
+        return [
+          0xf0 | (cp >> 18),
+          0x80 | ((cp >> 12) & 0x3f),
+          0x80 | ((cp >> 6) & 0x3f),
+          0x80 | (cp & 0x3f),
+        ];
+      }
+
+      function decodeRune(bytes) {
+        const b = bytes[0];
+        if ((b & 0x80) === 0) return { codepoint: b, consumed: 1 };
+        if ((b & 0xe0) === 0xc0)
+          return { codepoint: ((b & 0x1f) << 6) | (bytes[1] & 0x3f), consumed: 2 };
+        if ((b & 0xf0) === 0xe0)
+          return {
+            codepoint: ((b & 0x0f) << 12) | ((bytes[1] & 0x3f) << 6) | (bytes[2] & 0x3f),
+            consumed: 3,
+          };
+        return {
+          codepoint:
+            ((b & 0x07) << 18) |
+            ((bytes[1] & 0x3f) << 12) |
+            ((bytes[2] & 0x3f) << 6) |
+            (bytes[3] & 0x3f),
+          consumed: 4,
+        };
+      }
+
+      function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+
+      async function encode() {
+        const CP = 0xe001;
+        const bytes = encodeRune(CP);
+
+        document.getElementById("step-encode").classList.add("active");
+        await sleep(300);
+        document.getElementById("step-encode").classList.remove("active");
+
+        document.getElementById("step-wire").classList.add("active");
+        const bytesEl = document.getElementById("bytes-display");
+        bytesEl.innerHTML = "";
+        for (const byte of bytes) {
+          await sleep(120);
+          const el = document.createElement("span");
+          el.className = "byte";
+          el.textContent = byte;
+          bytesEl.appendChild(el);
+        }
+        await sleep(400);
+        document.getElementById("step-wire").classList.remove("active");
+
+        document.getElementById("step-decode").classList.add("active");
+        await sleep(300);
+        const { codepoint } = decodeRune(bytes);
+        const hex = codepoint.toString(16).toUpperCase().padStart(4, "0");
+        document.getElementById("cp-display").innerHTML =
+          `decoded &rarr; <span class="cp">U+${hex}</span>`;
+        await sleep(400);
+        document.getElementById("step-decode").classList.remove("active");
+
+        document.getElementById("step-registry").classList.add("active");
+        await sleep(300);
+        const entry = REGISTRY[codepoint];
+        const glyphEl = document.getElementById("glyph-display");
+        if (entry) {
+          glyphEl.innerHTML = `
+        <div class="glyph">&#xE001;</div>
+        <div class="glyph-meta">
+          <div class="name">${entry.name}</div>
+          <div class="desc">${entry.description}</div>
+        </div>
+      `;
+        } else {
+          glyphEl.innerHTML = `<span class="empty">— unknown codepoint, no registry entry —</span>`;
+        }
+        await sleep(400);
+        document.getElementById("step-registry").classList.remove("active");
+      }
+    </script>
+  </body>
+</html>

@@ -13,6 +13,8 @@ import (
 
 const RuneError = rune(-1)
 
+// EncodeRune encodes a single Unicode codepoint into its UTF-8 byte representation.
+// Dispatches to the appropriate encoder based on codepoint range.
 func EncodeRune(r rune) ([]byte, int) {
 	switch {
 	case r <= 0x7F:
@@ -26,17 +28,8 @@ func EncodeRune(r rune) ([]byte, int) {
 	}
 }
 
-// TODO: keep this implementation so we could compare the perf
-// and benchmark the two EncodeString implementations and
-// func EncodeString(s string) []byte {
-// 	var finalBytes []byte
-// 	for _, r := range s {
-// 		bytes, _ := EncodeRune(r)
-// 		finalBytes = append(finalBytes, bytes...)
-// 	}
-// 	return finalBytes
-// }
-
+// EncodeString encodes a Go string into its raw UTF-8 byte sequence.
+// Advances through the byte slice, widening the window on RuneError until a full codepoint is captured.
 func EncodeString(s string) []byte {
 	raw := []byte(s)
 	result := []byte{}
@@ -55,20 +48,34 @@ func EncodeString(s string) []byte {
 	return result
 }
 
+// TODO: keep this implementation so we could compare the perf
+// and benchmark the two EncodeString implementations and
+// func EncodeString(s string) []byte {
+// 	var finalBytes []byte
+// 	for _, r := range s {
+// 		bytes, _ := EncodeRune(r)
+// 		finalBytes = append(finalBytes, bytes...)
+// 	}
+// 	return finalBytes
+// }
+
+// DecodeRune decodes the first codepoint from b by inspecting the leading byte's prefix bits.
 func DecodeRune(b []byte) (rune, int) {
 	magic := b[0]
 	switch {
-	case magic&0x80 == 0:
+	case magic&0x80 == 0: // 0xxxxxxx — single byte
 		return decodeOne(b)
-	case magic&0xE0 == 0xC0:
+	case magic&0xE0 == 0xC0: // 110xxxxx — two bytes
 		return decodeTwo(b)
-	case magic&0xF0 == 0xE0:
+	case magic&0xF0 == 0xE0: // 1110xxxx — three bytes
 		return decodeThree(b)
-	default:
+	default: // 11110xxx — four bytes
 		return decodeFour(b)
 	}
 }
 
+// DecodeBytes decodes a full byte slice into a slice of Unicode codepoints.
+// Uses the same sliding window approach as EncodeString.
 func DecodeBytes(b []byte) []rune {
 	start, end := 0, 1
 	runes := []rune{}
@@ -99,7 +106,7 @@ func encodeTwo(r rune) ([]byte, int) {
 	// Right shift by 6 bits
 	r = r >> 6
 	// Leading byte: 110xxxxx
-	result = r & 0x1F      // 0x3F = 0b00011111
+	result = r & 0x1F      // 0x1F = 0b00011111
 	result = 0xC0 | result // 0xC0 = 0b11000000
 	bytes = slices.Insert(bytes, 0, byte(result))
 	return bytes, 2
@@ -118,7 +125,7 @@ func encodeThree(r rune) ([]byte, int) {
 	bytes = slices.Insert(bytes, 0, byte(result))
 	r = r >> 6
 	// Leading byte: 1110xxxx
-	result = r & 0xF       // 0xF 	= 0b00001111
+	result = r & 0xF       // 0xF  = 0b00001111
 	result = 0xE0 | result // 0xE0 = 0b11100000
 	bytes = slices.Insert(bytes, 0, byte(result))
 	return bytes, 3
@@ -141,8 +148,8 @@ func encodeFour(r rune) ([]byte, int) {
 	result = 0x80 | result
 	bytes = slices.Insert(bytes, 0, byte(result))
 	r = r >> 6
-	// Continuation byte: 11110xxx
-	result = r & 0x7       // 0x7 	= 0b00000111
+	// Leading byte: 11110xxx
+	result = r & 0x7       // 0x7  = 0b00000111
 	result = 0xF0 | result // 0xF0 = 0b11110000
 	bytes = slices.Insert(bytes, 0, byte(result))
 	return bytes, 4
@@ -171,6 +178,7 @@ func decodeThree(b []byte) (rune, int) {
 		return -1, 3
 	}
 	var r rune
+	// Same pattern: strip prefix, shift, OR in next 6 bits
 	r = rune(b[0]) & 0xF
 	r = r << 6
 	r = r | (rune(b[1] & 0x3F))

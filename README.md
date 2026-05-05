@@ -6,7 +6,7 @@ No standard library encoding functions used: every bit operation is explicit. Bu
 
 ## Usage and internals
 
-Article available at [https://x.com/mxdvf](x.com/mxdvf) (coming soon!), explained step-by-step using first principles.
+Article available at [Let's build UTF-8 Encoding from Scratch in Go (Step-by-Step)](https://x.com/mxdvf/status/2051668255153303594), explained using first principles.
 
 ## Private use area demo
 
